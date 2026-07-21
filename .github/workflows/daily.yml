@@ -1,0 +1,39 @@
+name: 毎日のThreads自動投稿
+
+on:
+  schedule:
+    - cron: "0 21 * * *"
+  workflow_dispatch: {}
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    steps:
+      - name: リポジトリ取得
+        uses: actions/checkout@v4
+
+      - name: Python セットアップ
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: 依存パッケージインストール
+        run: pip install -r requirements.txt
+
+      - name: 実行
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          AMAZON_ACCESS_KEY: ${{ secrets.AMAZON_ACCESS_KEY }}
+          AMAZON_SECRET_KEY: ${{ secrets.AMAZON_SECRET_KEY }}
+          AMAZON_PARTNER_TAG: ${{ secrets.AMAZON_PARTNER_TAG }}
+          THREADS_ACCESS_TOKEN: ${{ secrets.THREADS_ACCESS_TOKEN }}
+          THREADS_USER_ID: ${{ secrets.THREADS_USER_ID }}
+        run: python main.py
+
+      - name: ログをコミット
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add logs/ || true
+          git commit -m "chore: 自動投稿ログ追加 $(date +'%Y-%m-%d')" || echo "変更なし"
+          git push || echo "pushスキップ"
